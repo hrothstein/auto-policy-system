@@ -1,0 +1,795 @@
+openapi: 3.0.3
+info:
+  title: Policies API
+  description: |
+    RESTful API for managing auto insurance policies in the Auto Policy System.
+    Policies can have multiple drivers and vehicles associated with them.
+  version: 1.0.0
+  contact:
+    name: Salesforce/MuleSoft FSI Team
+
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local Development
+  - url: https://auto-policy-demo.herokuapp.com/api/v1
+    description: Heroku Production
+
+tags:
+  - name: Policies
+    description: Policy management operations
+  - name: Policy-Drivers
+    description: Manage drivers on policies
+  - name: Policy-Vehicles
+    description: Manage vehicles on policies
+
+paths:
+  /policies:
+    get:
+      summary: Get all policies
+      description: |
+        Retrieve a list of all policies with optional filtering.
+        Policies include associated drivers and vehicles in the response.
+      tags:
+        - Policies
+      operationId: getPolicies
+      parameters:
+        - name: status
+          in: query
+          description: Filter by policy status
+          schema:
+            type: string
+            enum: [ACTIVE, CANCELLED, EXPIRED, PENDING]
+          example: ACTIVE
+        - name: driverId
+          in: query
+          description: Filter policies by driver ID
+          schema:
+            type: string
+            format: uuid
+          example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+        - name: vehicleId
+          in: query
+          description: Filter policies by vehicle ID
+          schema:
+            type: string
+            format: uuid
+          example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '200':
+          description: List of all policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliciesResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new policy
+      description: |
+        Create a new insurance policy. Optionally include driverIds and vehicleIds
+        to associate drivers and vehicles with the policy.
+      tags:
+        - Policies
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyInput'
+            example:
+              address: '123 Main St'
+              city: New York
+              state: NY
+              zipCode: '10001'
+              premium: 1200.00
+              effectiveDate: '2025-01-01'
+              terminationDate: '2026-01-01'
+              policyValue: 50000.00
+              status: ACTIVE
+              driverIds:
+                - 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+              vehicleIds:
+                - 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '201':
+          description: Policy created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}:
+    get:
+      summary: Get a specific policy
+      description: Retrieve detailed information about a specific policy including associated drivers and vehicles
+      tags:
+        - Policies
+      operationId: getPolicyById
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '200':
+          description: Policy details with drivers and vehicles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a policy
+      description: |
+        Update policy information. Partial updates are allowed.
+        Note: Use specific endpoints to manage drivers and vehicles on policies.
+      tags:
+        - Policies
+      operationId: updatePolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyUpdate'
+            example:
+              premium: 1500.00
+              status: ACTIVE
+      responses:
+        '200':
+          description: Policy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Validation error or invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a policy
+      description: Delete a policy from the system
+      tags:
+        - Policies
+      operationId: deletePolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '200':
+          description: Policy deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/drivers:
+    post:
+      summary: Add a driver to a policy
+      description: Associate a driver with a policy
+      tags:
+        - Policy-Drivers
+      operationId: addDriverToPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - driverId
+              properties:
+                driverId:
+                  type: string
+                  format: uuid
+                  description: ID of the driver to add
+                  example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '200':
+          description: Driver added to policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or driver/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/drivers/{driverId}:
+    delete:
+      summary: Remove a driver from a policy
+      description: Disassociate a driver from a policy
+      tags:
+        - Policy-Drivers
+      operationId: removeDriverFromPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/DriverId'
+      responses:
+        '200':
+          description: Driver removed from policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or driver/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Replace a driver on a policy
+      description: Replace an existing driver on a policy with a different driver
+      tags:
+        - Policy-Drivers
+      operationId: replaceDriverOnPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/DriverId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newDriverId
+              properties:
+                newDriverId:
+                  type: string
+                  format: uuid
+                  description: ID of the new driver to replace with
+                  example: 'd2a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '200':
+          description: Driver replaced on policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or driver/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/vehicles:
+    post:
+      summary: Add a vehicle to a policy
+      description: Associate a vehicle with a policy
+      tags:
+        - Policy-Vehicles
+      operationId: addVehicleToPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vehicleId
+              properties:
+                vehicleId:
+                  type: string
+                  format: uuid
+                  description: ID of the vehicle to add
+                  example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '200':
+          description: Vehicle added to policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or vehicle/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/vehicles/{vehicleId}:
+    delete:
+      summary: Remove a vehicle from a policy
+      description: Disassociate a vehicle from a policy
+      tags:
+        - Policy-Vehicles
+      operationId: removeVehicleFromPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/VehicleId'
+      responses:
+        '200':
+          description: Vehicle removed from policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or vehicle/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Replace a vehicle on a policy
+      description: Replace an existing vehicle on a policy with a different vehicle
+      tags:
+        - Policy-Vehicles
+      operationId: replaceVehicleOnPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/VehicleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newVehicleId
+              properties:
+                newVehicleId:
+                  type: string
+                  format: uuid
+                  description: ID of the new vehicle to replace with
+                  example: 'v2a2b3c4-5678-90ab-cdef-1234567890ab'
+      responses:
+        '200':
+          description: Vehicle replaced on policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '400':
+          description: Invalid request or vehicle/policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    PolicyId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier for the policy (UUID)
+      schema:
+        type: string
+        format: uuid
+        example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+    DriverId:
+      name: driverId
+      in: path
+      required: true
+      description: Unique identifier for the driver (UUID)
+      schema:
+        type: string
+        format: uuid
+        example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+    VehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      description: Unique identifier for the vehicle (UUID)
+      schema:
+        type: string
+        format: uuid
+        example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+
+  schemas:
+    Policy:
+      type: object
+      required:
+        - id
+        - policyNumber
+        - address
+        - city
+        - state
+        - zipCode
+        - premium
+        - effectiveDate
+        - terminationDate
+        - policyValue
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the policy
+          example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+        policyNumber:
+          type: string
+          pattern: '^AUTO-\\d{5}$'
+          description: Human-readable policy number (format: AUTO-XXXXX)
+          example: AUTO-00001
+        address:
+          type: string
+          description: Street address
+          example: '123 Main St'
+        city:
+          type: string
+          description: City name
+          example: New York
+        state:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Two-letter uppercase state code
+          example: NY
+        zipCode:
+          type: string
+          pattern: '^\\d{5}$'
+          description: Five-digit ZIP code
+          example: '10001'
+        premium:
+          type: number
+          format: float
+          minimum: 0
+          description: Annual premium amount in USD
+          example: 1200.00
+        effectiveDate:
+          type: string
+          format: date
+          description: Policy start date (ISO 8601 format)
+          example: '2025-01-01'
+        terminationDate:
+          type: string
+          format: date
+          description: Policy end date (ISO 8601 format)
+          example: '2026-01-01'
+        policyValue:
+          type: number
+          format: float
+          minimum: 0
+          description: Total policy coverage value in USD
+          example: 50000.00
+        status:
+          type: string
+          enum: [ACTIVE, CANCELLED, EXPIRED, PENDING]
+          description: Policy status
+          example: ACTIVE
+        drivers:
+          type: array
+          description: List of drivers associated with this policy
+          items:
+            $ref: '#/components/schemas/DriverReference'
+        vehicles:
+          type: array
+          description: List of vehicles associated with this policy
+          items:
+            $ref: '#/components/schemas/VehicleReference'
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Record last update timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+
+    PolicyInput:
+      type: object
+      required:
+        - address
+        - city
+        - state
+        - zipCode
+        - premium
+        - effectiveDate
+        - terminationDate
+        - policyValue
+        - status
+      properties:
+        address:
+          type: string
+          example: '123 Main St'
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          example: NY
+        zipCode:
+          type: string
+          pattern: '^\\d{5}$'
+          example: '10001'
+        premium:
+          type: number
+          format: float
+          minimum: 0
+          example: 1200.00
+        effectiveDate:
+          type: string
+          format: date
+          example: '2025-01-01'
+        terminationDate:
+          type: string
+          format: date
+          example: '2026-01-01'
+        policyValue:
+          type: number
+          format: float
+          minimum: 0
+          example: 50000.00
+        status:
+          type: string
+          enum: [ACTIVE, CANCELLED, EXPIRED, PENDING]
+          example: ACTIVE
+        driverIds:
+          type: array
+          description: Optional list of driver IDs to associate with the policy
+          items:
+            type: string
+            format: uuid
+          example:
+            - 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+        vehicleIds:
+          type: array
+          description: Optional list of vehicle IDs to associate with the policy
+          items:
+            type: string
+            format: uuid
+          example:
+            - 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+
+    PolicyUpdate:
+      type: object
+      description: Partial policy update (all fields optional)
+      properties:
+        address:
+          type: string
+          example: '123 Main St'
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          example: NY
+        zipCode:
+          type: string
+          pattern: '^\\d{5}$'
+          example: '10001'
+        premium:
+          type: number
+          format: float
+          minimum: 0
+          example: 1200.00
+        effectiveDate:
+          type: string
+          format: date
+          example: '2025-01-01'
+        terminationDate:
+          type: string
+          format: date
+          example: '2026-01-01'
+        policyValue:
+          type: number
+          format: float
+          minimum: 0
+          example: 50000.00
+        status:
+          type: string
+          enum: [ACTIVE, CANCELLED, EXPIRED, PENDING]
+          example: ACTIVE
+
+    DriverReference:
+      type: object
+      description: Driver information included in policy responses
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        dateOfBirth:
+          type: string
+          format: date
+          example: '1985-03-15'
+        licenseNumber:
+          type: string
+          example: NY123456789
+        licenseState:
+          type: string
+          example: NY
+        licenseExpiration:
+          type: string
+          format: date
+          example: '2027-03-15'
+        pointsOnLicense:
+          type: integer
+          example: 2
+        accidentsCount:
+          type: integer
+          example: 0
+
+    VehicleReference:
+      type: object
+      description: Vehicle information included in policy responses
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+        year:
+          type: integer
+          example: 2022
+        make:
+          type: string
+          example: Toyota
+        model:
+          type: string
+          example: Camry
+        vin:
+          type: string
+          example: 1HGBH41JXMN109186
+        plate:
+          type: string
+          example: ABC1234
+        plateState:
+          type: string
+          example: NY
+
+    PolicyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Policy'
+
+    PoliciesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        count:
+          type: integer
+          description: Total number of policies returned
+          example: 50
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Policy deleted successfully
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Policy not found
+

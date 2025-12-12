@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: Drivers API
+  description: |
+    RESTful API for managing drivers in the Auto Policy System.
+    Drivers represent licensed individuals who can be associated with insurance policies.
+  version: 1.0.0
+  contact:
+    name: Salesforce/MuleSoft FSI Team
+
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local Development
+  - url: https://auto-policy-demo.herokuapp.com/api/v1
+    description: Heroku Production
+
+tags:
+  - name: Drivers
+    description: Driver management operations
+
+paths:
+  /drivers:
+    get:
+      summary: Get all drivers
+      description: Retrieve a list of all drivers in the system
+      tags:
+        - Drivers
+      operationId: getDrivers
+      responses:
+        '200':
+          description: List of all drivers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriversResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new driver
+      description: Create a new driver record with license and driving history information
+      tags:
+        - Drivers
+      operationId: createDriver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverInput'
+            example:
+              firstName: John
+              lastName: Smith
+              dateOfBirth: '1985-03-15'
+              licenseNumber: NY123456789
+              licenseState: NY
+              licenseExpiration: '2027-03-15'
+              pointsOnLicense: 2
+              accidentsCount: 0
+      responses:
+        '201':
+          description: Driver created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /drivers/{id}:
+    get:
+      summary: Get a specific driver
+      description: Retrieve detailed information about a specific driver by ID
+      tags:
+        - Drivers
+      operationId: getDriverById
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+      responses:
+        '200':
+          description: Driver details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+        '404':
+          description: Driver not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a driver
+      description: Update driver information. Partial updates are allowed.
+      tags:
+        - Drivers
+      operationId: updateDriver
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverUpdate'
+            example:
+              pointsOnLicense: 3
+              accidentsCount: 1
+      responses:
+        '200':
+          description: Driver updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+        '404':
+          description: Driver not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Validation error or invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a driver
+      description: |
+        Delete a driver from the system. 
+        Drivers associated with active policies cannot be deleted.
+      tags:
+        - Drivers
+      operationId: deleteDriver
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+      responses:
+        '200':
+          description: Driver deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Cannot delete driver associated with active policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseWithPolicyIds'
+        '404':
+          description: Driver not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    DriverId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier for the driver (UUID)
+      schema:
+        type: string
+        format: uuid
+        example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+
+  schemas:
+    Driver:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - dateOfBirth
+        - licenseNumber
+        - licenseState
+        - licenseExpiration
+        - pointsOnLicense
+        - accidentsCount
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the driver
+          example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
+        firstName:
+          type: string
+          description: Driver's first name
+          example: John
+        lastName:
+          type: string
+          description: Driver's last name
+          example: Smith
+        dateOfBirth:
+          type: string
+          format: date
+          description: Driver's date of birth (ISO 8601 format)
+          example: '1985-03-15'
+        licenseNumber:
+          type: string
+          description: Driver's license number
+          example: NY123456789
+        licenseState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Two-letter uppercase state code that issued the license
+          example: NY
+        licenseExpiration:
+          type: string
+          format: date
+          description: License expiration date (ISO 8601 format)
+          example: '2027-03-15'
+        pointsOnLicense:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Points on license (last 24 months)
+          example: 2
+        accidentsCount:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Number of accidents (last 24 months)
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Record last update timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+
+    DriverInput:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - dateOfBirth
+        - licenseNumber
+        - licenseState
+        - licenseExpiration
+        - pointsOnLicense
+        - accidentsCount
+      properties:
+        firstName:
+          type: string
+          description: Driver's first name
+          example: John
+        lastName:
+          type: string
+          description: Driver's last name
+          example: Smith
+        dateOfBirth:
+          type: string
+          format: date
+          description: Driver's date of birth (ISO 8601 format)
+          example: '1985-03-15'
+        licenseNumber:
+          type: string
+          description: Driver's license number
+          example: NY123456789
+        licenseState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Two-letter uppercase state code that issued the license
+          example: NY
+        licenseExpiration:
+          type: string
+          format: date
+          description: License expiration date (ISO 8601 format)
+          example: '2027-03-15'
+        pointsOnLicense:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Points on license (last 24 months)
+          example: 2
+        accidentsCount:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Number of accidents (last 24 months)
+          example: 0
+
+    DriverUpdate:
+      type: object
+      description: Partial driver update (all fields optional)
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        dateOfBirth:
+          type: string
+          format: date
+          example: '1985-03-15'
+        licenseNumber:
+          type: string
+          example: NY123456789
+        licenseState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          example: NY
+        licenseExpiration:
+          type: string
+          format: date
+          example: '2027-03-15'
+        pointsOnLicense:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 2
+        accidentsCount:
+          type: integer
+          minimum: 0
+          maximum: 5
+          example: 0
+
+    DriverResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Driver'
+
+    DriversResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Driver'
+        count:
+          type: integer
+          description: Total number of drivers returned
+          example: 75
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Driver deleted successfully
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Driver not found
+
+    ErrorResponseWithPolicyIds:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Cannot delete driver associated with active policies
+        policyIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of active policy IDs that reference this driver
+          example:
+            - 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+            - 'p2a2b3c4-5678-90ab-cdef-1234567890ab'
+

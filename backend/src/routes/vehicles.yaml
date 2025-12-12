@@ -1,0 +1,393 @@
+openapi: 3.0.3
+info:
+  title: Vehicles API
+  description: |
+    RESTful API for managing vehicles in the Auto Policy System.
+    Vehicles represent automobiles that can be insured under policies.
+  version: 1.0.0
+  contact:
+    name: Salesforce/MuleSoft FSI Team
+
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local Development
+  - url: https://auto-policy-demo.herokuapp.com/api/v1
+    description: Heroku Production
+
+tags:
+  - name: Vehicles
+    description: Vehicle management operations
+
+paths:
+  /vehicles:
+    get:
+      summary: Get all vehicles
+      description: Retrieve a list of all vehicles in the system
+      tags:
+        - Vehicles
+      operationId: getVehicles
+      responses:
+        '200':
+          description: List of all vehicles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehiclesResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new vehicle
+      description: Create a new vehicle record with registration and identification information
+      tags:
+        - Vehicles
+      operationId: createVehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleInput'
+            example:
+              year: 2022
+              make: Toyota
+              model: Camry
+              vin: 1HGBH41JXMN109186
+              plate: ABC1234
+              plateState: NY
+      responses:
+        '201':
+          description: Vehicle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicles/{id}:
+    get:
+      summary: Get a specific vehicle
+      description: Retrieve detailed information about a specific vehicle by ID
+      tags:
+        - Vehicles
+      operationId: getVehicleById
+      parameters:
+        - $ref: '#/components/parameters/VehicleId'
+      responses:
+        '200':
+          description: Vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a vehicle
+      description: Update vehicle information. Partial updates are allowed.
+      tags:
+        - Vehicles
+      operationId: updateVehicle
+      parameters:
+        - $ref: '#/components/parameters/VehicleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdate'
+            example:
+              plate: XYZ9876
+              plateState: CA
+      responses:
+        '200':
+          description: Vehicle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Validation error or invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a vehicle
+      description: |
+        Delete a vehicle from the system.
+        Vehicles associated with active policies cannot be deleted.
+      tags:
+        - Vehicles
+      operationId: deleteVehicle
+      parameters:
+        - $ref: '#/components/parameters/VehicleId'
+      responses:
+        '200':
+          description: Vehicle deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Cannot delete vehicle associated with active policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseWithPolicyIds'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    VehicleId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier for the vehicle (UUID)
+      schema:
+        type: string
+        format: uuid
+        example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+
+  schemas:
+    Vehicle:
+      type: object
+      required:
+        - id
+        - year
+        - make
+        - model
+        - vin
+        - plate
+        - plateState
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the vehicle
+          example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
+        year:
+          type: integer
+          minimum: 1990
+          maximum: 2025
+          description: Vehicle model year
+          example: 2022
+        make:
+          type: string
+          description: Vehicle manufacturer
+          example: Toyota
+        model:
+          type: string
+          description: Vehicle model name
+          example: Camry
+        vin:
+          type: string
+          pattern: '^[A-HJ-NPR-Z0-9]{17}$'
+          description: Vehicle Identification Number (17 alphanumeric characters)
+          example: 1HGBH41JXMN109186
+        plate:
+          type: string
+          description: License plate number
+          example: ABC1234
+        plateState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Two-letter uppercase state code of registration
+          example: NY
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Record last update timestamp (ISO 8601)
+          example: '2025-01-01T00:00:00Z'
+
+    VehicleInput:
+      type: object
+      required:
+        - year
+        - make
+        - model
+        - vin
+        - plate
+        - plateState
+      properties:
+        year:
+          type: integer
+          minimum: 1990
+          maximum: 2025
+          description: Vehicle model year
+          example: 2022
+        make:
+          type: string
+          description: Vehicle manufacturer
+          example: Toyota
+        model:
+          type: string
+          description: Vehicle model name
+          example: Camry
+        vin:
+          type: string
+          pattern: '^[A-HJ-NPR-Z0-9]{17}$'
+          description: Vehicle Identification Number (17 alphanumeric characters)
+          example: 1HGBH41JXMN109186
+        plate:
+          type: string
+          description: License plate number
+          example: ABC1234
+        plateState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Two-letter uppercase state code of registration
+          example: NY
+
+    VehicleUpdate:
+      type: object
+      description: Partial vehicle update (all fields optional)
+      properties:
+        year:
+          type: integer
+          minimum: 1990
+          maximum: 2025
+          example: 2022
+        make:
+          type: string
+          example: Toyota
+        model:
+          type: string
+          example: Camry
+        vin:
+          type: string
+          pattern: '^[A-HJ-NPR-Z0-9]{17}$'
+          example: 1HGBH41JXMN109186
+        plate:
+          type: string
+          example: ABC1234
+        plateState:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          example: NY
+
+    VehicleResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Vehicle'
+
+    VehiclesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vehicle'
+        count:
+          type: integer
+          description: Total number of vehicles returned
+          example: 85
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Vehicle deleted successfully
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Vehicle not found
+
+    ErrorResponseWithPolicyIds:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Cannot delete vehicle associated with active policies
+        policyIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of active policy IDs that reference this vehicle
+          example:
+            - 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+
