@@ -603,7 +603,7 @@ components:
         policyNumber:
           type: string
           pattern: '^AUTO-\d{5}$'
-          description: Human-readable policy number (format: AUTO-XXXXX)
+          description: Human-readable policy number in format AUTO-XXXXX
           example: AUTO-00001
         address:
           type: string
