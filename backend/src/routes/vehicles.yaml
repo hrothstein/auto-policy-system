@@ -87,7 +87,14 @@ paths:
         - Vehicles
       operationId: getVehicleById
       parameters:
-        - $ref: '#/components/parameters/VehicleId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the vehicle (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Vehicle details
@@ -121,7 +128,14 @@ paths:
         - Vehicles
       operationId: updateVehicle
       parameters:
-        - $ref: '#/components/parameters/VehicleId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the vehicle (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -166,7 +180,14 @@ paths:
         - Vehicles
       operationId: deleteVehicle
       parameters:
-        - $ref: '#/components/parameters/VehicleId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the vehicle (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Vehicle deleted successfully

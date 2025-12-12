@@ -89,7 +89,14 @@ paths:
         - Drivers
       operationId: getDriverById
       parameters:
-        - $ref: '#/components/parameters/DriverId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the driver (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Driver details
@@ -123,7 +130,14 @@ paths:
         - Drivers
       operationId: updateDriver
       parameters:
-        - $ref: '#/components/parameters/DriverId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the driver (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -168,7 +182,14 @@ paths:
         - Drivers
       operationId: deleteDriver
       parameters:
-        - $ref: '#/components/parameters/DriverId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the driver (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Driver deleted successfully

@@ -124,7 +124,14 @@ paths:
         - Policies
       operationId: getPolicyById
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Policy details with drivers and vehicles
@@ -160,7 +167,14 @@ paths:
         - Policies
       operationId: updatePolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -203,7 +217,14 @@ paths:
         - Policies
       operationId: deletePolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Policy deleted successfully
@@ -232,7 +253,14 @@ paths:
         - Policy-Drivers
       operationId: addDriverToPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -275,8 +303,22 @@ paths:
         - Policy-Drivers
       operationId: removeDriverFromPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
-        - $ref: '#/components/parameters/DriverId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+        - name: driverId
+          in: path
+          required: true
+          description: Unique identifier for the driver (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Driver removed from policy
@@ -304,8 +346,22 @@ paths:
         - Policy-Drivers
       operationId: replaceDriverOnPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
-        - $ref: '#/components/parameters/DriverId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+        - name: driverId
+          in: path
+          required: true
+          description: Unique identifier for the driver (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'd1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -348,7 +404,14 @@ paths:
         - Policy-Vehicles
       operationId: addVehicleToPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -391,8 +454,22 @@ paths:
         - Policy-Vehicles
       operationId: removeVehicleFromPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
-        - $ref: '#/components/parameters/VehicleId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+        - name: vehicleId
+          in: path
+          required: true
+          description: Unique identifier for the vehicle (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
       responses:
         '200':
           description: Vehicle removed from policy
@@ -420,8 +497,22 @@ paths:
         - Policy-Vehicles
       operationId: replaceVehicleOnPolicy
       parameters:
-        - $ref: '#/components/parameters/PolicyId'
-        - $ref: '#/components/parameters/VehicleId'
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the policy (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
+        - name: vehicleId
+          in: path
+          required: true
+          description: Unique identifier for the vehicle (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: 'v1a2b3c4-5678-90ab-cdef-1234567890ab'
       requestBody:
         required: true
         content:
@@ -511,7 +602,7 @@ components:
           example: 'p1a2b3c4-5678-90ab-cdef-1234567890ab'
         policyNumber:
           type: string
-          pattern: '^AUTO-\\d{5}$'
+          pattern: '^AUTO-\d{5}$'
           description: Human-readable policy number (format: AUTO-XXXXX)
           example: AUTO-00001
         address:
@@ -529,7 +620,7 @@ components:
           example: NY
         zipCode:
           type: string
-          pattern: '^\\d{5}$'
+          pattern: '^\d{5}$'
           description: Five-digit ZIP code
           example: '10001'
         premium:
@@ -605,7 +696,7 @@ components:
           example: NY
         zipCode:
           type: string
-          pattern: '^\\d{5}$'
+          pattern: '^\d{5}$'
           example: '10001'
         premium:
           type: number
@@ -662,7 +753,7 @@ components:
           example: NY
         zipCode:
           type: string
-          pattern: '^\\d{5}$'
+          pattern: '^\d{5}$'
           example: '10001'
         premium:
           type: number
