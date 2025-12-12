@@ -1,0 +1,25 @@
+{
+  "name": "auto-policy-system",
+  "version": "1.0.0",
+  "description": "Auto Policy Management System - Demo application for Salesforce/MuleSoft Financial Services",
+  "scripts": {
+    "start": "node backend/src/index.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && node src/index.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "heroku-postbuild": "npm run build"
+  },
+  "keywords": [
+    "insurance",
+    "policy",
+    "demo",
+    "mulesoft"
+  ],
+  "author": "Howie Rothstein",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
+
